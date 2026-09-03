@@ -31,6 +31,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   const [error, setError] = React.useState("");
   const [proStats, setProStats] = React.useState(null);
   const [proInterested, setProInterested] = React.useState(false);
+  const [proInterestedUsers, setProInterestedUsers] = React.useState([]);
   const [monthlyReport, setMonthlyReport] = React.useState(null);
   const [businessSummary, setBusinessSummary] = React.useState(null);
   const [smartAnalysis, setSmartAnalysis] = React.useState(null);
@@ -81,6 +82,21 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
     } finally {
       setOwnerLoginLoading(false);
     }
+  }
+
+  async function loadProInterestedUsers() {
+    if (!ownerToken) return;
+
+    try {
+      const res = await fetch(`${API}/pro/interested`, {
+        headers: { Authorization: `Bearer ${ownerToken}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setProInterestedUsers(data.interested_users || []);
+      }
+    } catch {}
   }
 
   async function loadProStats() {
@@ -173,6 +189,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   React.useEffect(() => {
     loadData();
     loadProStats();
+    loadProInterestedUsers();
     loadMonthlyReport();
     loadBusinessSummary();
     loadSmartAnalysis();
@@ -587,6 +604,22 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
             notifications.map((item) => (
               <div key={item.id}>
                 <span>{item.text}</span>
+              </div>
+            ))
+          )}
+        </section>
+
+        <section className="recent">
+          <h2>⭐ المهتمون بـ lbléd Pro</h2>
+          {proInterestedUsers.length === 0 ? (
+            <p style={{ color: "#789687" }}>لا يوجد مهتمون حاليًا.</p>
+          ) : (
+            proInterestedUsers.map((item) => (
+              <div key={item.id} style={{ marginBottom: "10px" }}>
+                <b>{item.email || "مستخدم"}</b>
+                <small style={{ display: "block", color: "#789687" }}>
+                  {item.created_at}
+                </small>
               </div>
             ))
           )}
