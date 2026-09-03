@@ -470,6 +470,13 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
               >
                 🔐 دخول المالك
               </button>
+              <button
+                className="primary"
+                style={{ width: "100%", marginTop: "10px" }}
+                onClick={() => alert("إنشاء الحساب المجاني قريبًا 🚀")}
+              >
+                🆓 إنشاء حساب مجاني
+              </button>
             </section>
 
             <p style={{ textAlign: "center", marginTop: "30px", opacity: 0.65 }}>
