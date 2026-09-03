@@ -198,6 +198,7 @@ function App() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(ownerToken ? { Authorization: `Bearer ${ownerToken}` } : {}),
         },
         body: JSON.stringify({
           recipient: transfer.recipient,
@@ -240,6 +241,7 @@ function App() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(ownerToken ? { Authorization: `Bearer ${ownerToken}` } : {}),
         },
         body: JSON.stringify({
           amount: 100000,
@@ -277,7 +279,12 @@ function App() {
 
       const response = await fetch(
         `${API}/cards/${card.id}/toggle-freeze`,
-        { method: "POST" }
+        {
+            method: "POST",
+            headers: ownerToken
+              ? { Authorization: `Bearer ${ownerToken}` }
+              : {},
+          }
       );
 
       const data = await response.json();
@@ -312,6 +319,7 @@ function App() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(ownerToken ? { Authorization: `Bearer ${ownerToken}` } : {}),
         },
         body: JSON.stringify(beneficiaryForm),
       });
