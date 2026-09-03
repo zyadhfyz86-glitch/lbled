@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
 
-const API = "http://127.0.0.1:8001/api";
+const API = "https://lbled-backend.onrender.com/api";
 
 function formatMoney(value) {
   return new Intl.NumberFormat("fr-DZ").format(value) + " DZD";
