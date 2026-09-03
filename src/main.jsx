@@ -13,6 +13,10 @@ function App() {
   const [ownerToken, setOwnerToken] = React.useState(
     () => sessionStorage.getItem("lbled_owner_token") || ""
   );
+  const [userToken, setUserToken] = React.useState(
+    () => sessionStorage.getItem("lbled_user_token") || ""
+  );
+  const authToken = ownerToken || userToken;
   const [ownerKey, setOwnerKey] = React.useState("");
   const [ownerLoginLoading, setOwnerLoginLoading] = React.useState(false);
 const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
@@ -89,13 +93,48 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
         password: "",
       });
 
+      if (!data.token) {
+        throw new Error("تم إنشاء الحساب لكن لم يتم إنشاء جلسة الدخول");
+      }
+
+      sessionStorage.setItem("lbled_user_token", data.token);
+      setOwnerToken("");
       setModal(null);
-      setMessage("تم إنشاء حسابك بنجاح ✅ يمكنك الآن تسجيل الدخول.");
-      setShowOwnerLogin(true);
+      setMessage("تم إنشاء حسابك بنجاح ✅ مرحبًا بك في lbléd.");
     } catch (err) {
       setError(err.message || "فشل إنشاء الحساب");
     } finally {
       setRegisterLoading(false);
+    }
+  }
+
+  async function userLogin(email, password) {
+    try {
+      setError("");
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "فشل تسجيل الدخول");
+      }
+
+      if (!data.token) {
+        throw new Error("تم تسجيل الدخول لكن لم يتم إنشاء جلسة");
+      }
+
+      sessionStorage.setItem("lbled_user_token", data.token);
+      sessionStorage.removeItem("lbled_owner_token");
+      setUserToken(data.token);
+      setOwnerToken("");
+      setModal(null);
+      setMessage("تم تسجيل الدخول بنجاح ✅ مرحبًا بك في lbléd.");
+    } catch (err) {
+      setError(err.message || "فشل تسجيل الدخول");
     }
   }
 
@@ -127,7 +166,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   }
 
   async function loadProInterestedUsers() {
-    if (!ownerToken) return;
+    if (!authToken) return;
 
     try {
       const res = await fetch(`${API}/pro/interested`, {
@@ -152,7 +191,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   }
 
   async function loadBusinessSummary() {
-    if (!ownerToken) return;
+    if (!authToken) return;
     try {
       const res = await fetch(`${API}/business/summary`);
       if (res.ok) {
@@ -163,7 +202,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   }
 
   async function loadSmartAnalysis() {
-    if (!ownerToken) return;
+    if (!authToken) return;
     try {
       const res = await fetch(`${API}/business/smart-analysis`, {
         headers: { Authorization: `Bearer ${ownerToken}` },
@@ -176,7 +215,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   }
 
   async function loadMonthlyReport() {
-    if (!ownerToken) return;
+    if (!authToken) return;
     try {
       const res = await fetch(`${API}/business/monthly-report`);
       if (res.ok) {
@@ -187,7 +226,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   }
 
   async function loadData() {
-    if (!ownerToken) {
+    if (!authToken) {
       setLoading(false);
       return;
     }
@@ -196,8 +235,8 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
       setLoading(true);
       setError("");
 
-      const authHeaders = ownerToken
-        ? { Authorization: `Bearer ${ownerToken}` }
+      const authHeaders = authToken
+        ? { Authorization: `Bearer ${authToken}` }
         : {};
 
       const [accountRes, transactionsRes, cardsRes, beneficiariesRes] =
@@ -237,7 +276,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
     loadMonthlyReport();
     loadBusinessSummary();
     loadSmartAnalysis();
-  }, [ownerToken]);
+  }, [authToken]);
 
   async function makeTransfer(e) {
     e.preventDefault();
@@ -263,7 +302,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(ownerToken ? { Authorization: `Bearer ${ownerToken}` } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
         body: JSON.stringify({
           recipient: transfer.recipient,
@@ -306,7 +345,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(ownerToken ? { Authorization: `Bearer ${ownerToken}` } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
         body: JSON.stringify({
           amount: 100000,
@@ -346,8 +385,8 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
         `${API}/cards/${card.id}/toggle-freeze`,
         {
             method: "POST",
-            headers: ownerToken
-              ? { Authorization: `Bearer ${ownerToken}` }
+            headers: authToken
+              ? { Authorization: `Bearer ${authToken}` }
               : {},
           }
       );
@@ -384,7 +423,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(ownerToken ? { Authorization: `Bearer ${ownerToken}` } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
         body: JSON.stringify(beneficiaryForm),
       });
@@ -484,7 +523,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
     return matchesSearch && matchesFilter;
   });
 
-  if (!ownerToken) {
+  if (!authToken) {
     if (!showOwnerLogin) {
       return (
         <div className="app" dir="rtl">
@@ -513,6 +552,14 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
                 🔐 دخول المالك
               </button>
               <button
+  className="primary"
+  style={{ width: "100%", marginTop: "10px" }}
+  onClick={() => setModal("login")}
+>
+  🔑 دخول المستخدم
+</button>
+
+<button
                 className="primary"
                 style={{ width: "100%", marginTop: "10px" }}
                 onClick={() => setModal("register")}
@@ -521,7 +568,63 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
               </button>
             </section>
 
-            {modal === "register" && (
+            {modal === "login" && (
+  <div
+    className="modal-backdrop"
+    onClick={() => setModal(null)}
+  >
+    <div
+      className="modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        className="close"
+        onClick={() => setModal(null)}
+      >
+        ×
+      </button>
+
+      <h2>🔑 تسجيل دخول المستخدم</h2>
+      <p style={{ opacity: 0.75 }}>
+        ادخل إلى حسابك في lbléd.
+      </p>
+
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const email = e.currentTarget.email.value;
+          const password = e.currentTarget.password.value;
+          await userLogin(email, password);
+        }}
+      >
+        <label>البريد الإلكتروني</label>
+        <input
+          name="email"
+          type="email"
+          dir="ltr"
+          placeholder="example@email.com"
+          required
+        />
+
+        <label>كلمة المرور</label>
+        <input
+          name="password"
+          type="password"
+          dir="ltr"
+          placeholder="كلمة المرور"
+          minLength={6}
+          required
+        />
+
+        <button className="primary" type="submit">
+          دخول
+        </button>
+      </form>
+    </div>
+  </div>
+)}
+
+{modal === "register" && (
               <div
                 className="modal-backdrop"
                 onClick={() => setModal(null)}
