@@ -1,0 +1,1289 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import "./style.css";
+
+const API = "http://127.0.0.1:8001/api";
+
+function formatMoney(value) {
+  return new Intl.NumberFormat("fr-DZ").format(value) + " DZD";
+}
+
+function App() {
+  const [account, setAccount] = React.useState(null);
+  const [transactions, setTransactions] = React.useState([]);
+  const [cards, setCards] = React.useState([]);
+  const [beneficiaries, setBeneficiaries] = React.useState([]);
+
+  const [transactionSearch, setTransactionSearch] = React.useState("");
+  const [transactionFilter, setTransactionFilter] = React.useState("all");
+  const [hidden, setHidden] = React.useState(false);
+  const [language, setLanguage] = React.useState("ar");
+  const [modal, setModal] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [message, setMessage] = React.useState("");
+  const [notifications, setNotifications] = React.useState([]);
+  const [error, setError] = React.useState("");
+  const [proStats, setProStats] = React.useState(null);
+  const [proInterested, setProInterested] = React.useState(false);
+  const [monthlyReport, setMonthlyReport] = React.useState(null);
+  const [businessSummary, setBusinessSummary] = React.useState(null);
+  const [smartAnalysis, setSmartAnalysis] = React.useState(null);
+
+  const [transfer, setTransfer] = React.useState({
+    recipient: "",
+    amount: "",
+    note: "",
+  });
+
+  const [transferLoading, setTransferLoading] = React.useState(false);
+
+  const [beneficiaryForm, setBeneficiaryForm] = React.useState({
+    name: "",
+    account_number: "",
+    bank_name: "",
+  });
+
+  function addNotification(text) {
+    setNotifications((prev) => [
+      { id: Date.now(), text },
+      ...prev,
+    ].slice(0, 10));
+  }
+
+  async function loadProStats() {
+    try {
+      const res = await fetch(`${API}/pro/stats`);
+      if (res.ok) {
+        const data = await res.json();
+        setProStats(data);
+      }
+    } catch {}
+  }
+
+  async function loadBusinessSummary() {
+    try {
+      const res = await fetch(`${API}/business/summary`);
+      if (res.ok) {
+        const data = await res.json();
+        setBusinessSummary(data);
+      }
+    } catch {}
+  }
+
+  async function loadSmartAnalysis() {
+    try {
+      const res = await fetch(`${API}/business/smart-analysis`);
+      if (res.ok) {
+        const data = await res.json();
+        setSmartAnalysis(data);
+      }
+    } catch {}
+  }
+
+  async function loadMonthlyReport() {
+    try {
+      const res = await fetch(`${API}/business/monthly-report`);
+      if (res.ok) {
+        const data = await res.json();
+        setMonthlyReport(data);
+      }
+    } catch {}
+  }
+
+  async function loadData() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const [accountRes, transactionsRes, cardsRes, beneficiariesRes] =
+        await Promise.all([
+          fetch(`${API}/account`),
+          fetch(`${API}/transactions`),
+          fetch(`${API}/cards`),
+          fetch(`${API}/beneficiaries`),
+        ]);
+
+      if (!accountRes.ok || !transactionsRes.ok || !cardsRes.ok) {
+        throw new Error("تعذر الاتصال بالـBackend");
+      }
+
+      const accountData = await accountRes.json();
+      const transactionsData = await transactionsRes.json();
+      const cardsData = await cardsRes.json();
+      const beneficiariesData = await beneficiariesRes.json();
+
+      setAccount(accountData);
+      setTransactions(transactionsData.transactions || []);
+      setCards(cardsData.cards || []);
+      setBeneficiaries(beneficiariesData.beneficiaries || []);
+    } catch (err) {
+      setError(
+        "تعذر الاتصال بالخادم. تأكد أن Backend يعمل على المنفذ 8001."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  React.useEffect(() => {
+    loadData();
+    loadProStats();
+    loadMonthlyReport();
+    loadBusinessSummary();
+    loadSmartAnalysis();
+  }, []);
+
+  async function makeTransfer(e) {
+    e.preventDefault();
+
+    const amount = Number(transfer.amount);
+
+    if (!transfer.recipient.trim()) {
+      setError("اكتب اسم المستفيد أو رقم الحساب");
+      return;
+    }
+
+    if (!amount || amount <= 0) {
+      setError("أدخل مبلغًا صحيحًا");
+      return;
+    }
+
+    try {
+      setError("");
+      setMessage("");
+      setTransferLoading(true);
+
+      const response = await fetch(`${API}/transfer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          recipient: transfer.recipient,
+          amount,
+          note: transfer.note,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "فشل التحويل");
+      }
+
+      setTransfer({
+        recipient: "",
+        amount: "",
+        note: "",
+      });
+
+      setModal(null);
+      setMessage(
+        `تم تسجيل التحويل بنجاح ✅ | رقم العملية: ${data.transaction_id} | الرصيد بعد التحويل: ${formatMoney(data.balance)}`
+      );
+
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setTransferLoading(false);
+    }
+  }
+
+  async function addMoney() {
+    try {
+      setError("");
+      setMessage("");
+
+      const response = await fetch(`${API}/add-money`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: 100000,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "فشلت إضافة الأموال");
+      }
+
+      setModal(null);
+      addNotification("تمت إضافة أموال إلى الحساب 💰");
+      setMessage("تمت إضافة 100,000 DZD بنجاح ✅");
+
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+
+  async function toggleCardFreeze(card) {
+    if (
+      card.status === "active" &&
+      !window.confirm("هل أنت متأكد أنك تريد تجميد هذه البطاقة؟")
+    ) {
+      return;
+    }
+
+    try {
+      setError("");
+      setMessage("");
+
+      const response = await fetch(
+        `${API}/cards/${card.id}/toggle-freeze`,
+        { method: "POST" }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "فشل تغيير حالة البطاقة");
+      }
+
+      addNotification(data.message + " 🔔");
+      setMessage(data.message + " ✅");
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+
+
+  async function addBeneficiary(e) {
+    e.preventDefault();
+
+    if (!beneficiaryForm.name.trim() || !beneficiaryForm.account_number.trim()) {
+      setError("أدخل اسم المستفيد ورقم الحساب");
+      return;
+    }
+
+    try {
+      setError("");
+      setMessage("");
+
+      const response = await fetch(`${API}/beneficiaries`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(beneficiaryForm),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "فشل إضافة المستفيد");
+      }
+
+      setBeneficiaryForm({
+        name: "",
+        account_number: "",
+        bank_name: "",
+      });
+
+      setModal(null);
+      setMessage("تمت إضافة المستفيد بنجاح ✅");
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+
+  if (loading) {
+    return (
+      <div className="app" dir="rtl">
+        <main>
+          <div className="welcome">
+            <h1>lbléd.</h1>
+            <p>جاري تحميل حسابك...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const getTransactionIcon = (type) => {
+    switch (type) {
+      case "transfer":
+        return "↗";
+      case "deposit":
+        return "＋";
+      case "incoming":
+        return "↙";
+      case "card_payment":
+        return "💳";
+      case "purchase":
+        return "🛒";
+      default:
+        return "•";
+    }
+  };
+
+  const balance = account?.account?.balance || 0;
+  const userName = account?.user?.name || "المستخدم";
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const monthlyTransactions = transactions.filter((item) => {
+    const date = new Date(item.created_at);
+    return (
+      date.getMonth() === currentMonth &&
+      date.getFullYear() === currentYear
+    );
+  });
+
+  const totalIncome = monthlyTransactions
+    .filter((item) => Number(item.amount) > 0)
+    .reduce((sum, item) => sum + Number(item.amount), 0);
+
+  const totalExpenses = monthlyTransactions
+    .filter((item) => Number(item.amount) < 0)
+    .reduce((sum, item) => sum + Math.abs(Number(item.amount)), 0);
+
+  const monthlyNet = totalIncome - totalExpenses;
+
+  const filteredTransactions = transactions.filter((item) => {
+    const search = transactionSearch.trim().toLowerCase();
+
+    const matchesSearch =
+      !search ||
+      String(item.title || "").toLowerCase().includes(search) ||
+      String(item.recipient || "").toLowerCase().includes(search) ||
+      String(item.note || "").toLowerCase().includes(search) ||
+      String(item.amount || "").includes(search);
+
+    const matchesFilter =
+      transactionFilter === "all" ||
+      (transactionFilter === "income" && Number(item.amount) > 0) ||
+      (transactionFilter === "expense" && Number(item.amount) < 0) ||
+      (transactionFilter === "transfer" && item.type === "transfer");
+
+    return matchesSearch && matchesFilter;
+  });
+
+  return (
+    <div className="app" dir="rtl">
+      <header>
+        <button
+          onClick={() => setLanguage(language === "ar" ? "fr" : language === "fr" ? "en" : "ar")}
+          style={{
+            padding: "8px 12px",
+            borderRadius: "10px",
+            border: "1px solid #28543c",
+            background: "#0c2116",
+            color: "#dff8e9"
+          }}
+        >
+          {language === "ar" ? "FR" : language === "fr" ? "EN" : "AR"}
+        </button>
+        <div className="logo">
+          lbléd<span>.</span>
+        </div>
+
+        <div className="avatar">
+          {userName.charAt(0)}
+        </div>
+      </header>
+
+      <main>
+        <div className="welcome">
+          <small>مرحباً {userName} 👋</small>
+          <h1>لوحة التحكم</h1>
+          <p>كل أموالك في مكان واحد.</p>
+        </div>
+
+        {error && (
+          <div
+            style={{
+              marginBottom: "15px",
+              padding: "14px",
+              borderRadius: "14px",
+              background: "#3b1717",
+              color: "#ffb5ae",
+              border: "1px solid #71312b",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {message && (
+          <div
+            style={{
+              marginBottom: "15px",
+              padding: "14px",
+              borderRadius: "14px",
+              background: "#123b27",
+              color: "#9af2c1",
+              border: "1px solid #285c40",
+            }}
+          >
+            {message}
+          </div>
+        )}
+
+        <section className="recent" style={{ marginBottom: "18px" }}>
+          <h2>🔔 الإشعارات</h2>
+          {notifications.length === 0 ? (
+            <p style={{ color: "#789687" }}>لا توجد إشعارات جديدة.</p>
+          ) : (
+            notifications.map((item) => (
+              <div key={item.id}>
+                <span>{item.text}</span>
+              </div>
+            ))
+          )}
+        </section>
+
+        <section className="recent profile-card">
+          <h2>👤 الملف الشخصي</h2>
+          <div><span>الاسم</span><b>{userName}</b></div>
+          <div><span>البريد الإلكتروني</span><b>{account?.user?.email || "—"}</b></div>
+          <div><span>رقم الحساب</span><b>{account?.account?.id || "—"}</b></div>
+          <div><span>العملة</span><b>{account?.account?.currency || "DZD"}</b></div>
+        </section>
+
+        <section className="balance">
+          <small>إجمالي الرصيد</small>
+
+          <strong dir="ltr">
+            {hidden ? "••••••••" : formatMoney(balance)}
+          </strong>
+
+          <button onClick={() => setHidden(!hidden)}>
+            {hidden ? "إظهار الرصيد" : "إخفاء الرصيد"}
+          </button>
+        </section>
+
+        <section className="business-panel">
+          <div className="business-header">
+            <div>
+              <small>إدارة النشاط التجاري</small>
+              <h2>مبيعاتك ومصاريفك في مكان واحد</h2>
+            </div>
+            <span>🏪</span>
+          </div>
+
+          <div className="business-stats">
+            <div>
+              <small>المبيعات</small>
+              <strong dir="ltr">{formatMoney(totalIncome)}</strong>
+            </div>
+            <div>
+              <small>المصاريف</small>
+              <strong dir="ltr">{formatMoney(totalExpenses)}</strong>
+            </div>
+            <div>
+              <small>الربح</small>
+              <strong dir="ltr">{formatMoney(monthlyNet)}</strong>
+            </div>
+          </div>
+
+          <div className="business-actions">
+            <button onClick={() => setModal("sale")}>
+              ＋ تسجيل بيع
+            </button>
+            <button onClick={() => setModal("expense")}>
+              ＋ تسجيل مصروف
+            </button>
+          </div>
+        </section>
+
+        <section className="finance-summary">
+          <h2>ملخص هذا الشهر</h2>
+
+          <div className="finance-bars">
+            <div className="finance-bar-group">
+              <div
+                className="finance-bar"
+                style={{ height: `${Math.max(8, Math.min(100, totalIncome ? (totalIncome / Math.max(totalIncome, totalExpenses, 1)) * 100 : 8))}%` }}
+              />
+              <span className="finance-label">الدخل</span>
+            </div>
+
+            <div className="finance-bar-group">
+              <div
+                className="finance-bar expense"
+                style={{ height: `${Math.max(8, Math.min(100, totalExpenses ? (totalExpenses / Math.max(totalIncome, totalExpenses, 1)) * 100 : 8))}%` }}
+              />
+              <span className="finance-label">المصروفات</span>
+            </div>
+          </div>
+
+          <div className="finance-legend">
+            <span>
+              <i className="finance-dot"></i>
+              الدخل: {formatMoney(totalIncome)}
+            </span>
+            <span>
+              <i className="finance-dot expense"></i>
+              المصروفات: {formatMoney(totalExpenses)}
+            </span>
+          </div>
+        </section>
+
+        <div className="grid">
+          <div className="card">
+            <b>💰</b>
+            <small>الرصيد الحالي</small>
+            <strong dir="ltr">
+              {hidden ? "••••••" : formatMoney(balance)}
+            </strong>
+          </div>
+
+          <div className="card">
+            <b>↗</b>
+            <small>الدخل هذا الشهر</small>
+            <strong dir="ltr">+{formatMoney(totalIncome)}</strong>
+          </div>
+
+          <div className="card">
+            <b>↘</b>
+            <small>المصروفات</small>
+            <strong dir="ltr">{formatMoney(totalExpenses)}</strong>
+          </div>
+
+          <div className="card">
+            <b>＝</b>
+            <small>صافي الشهر</small>
+            <strong dir="ltr">
+              {monthlyNet >= 0 ? "+" : ""}
+              {formatMoney(monthlyNet)}
+            </strong>
+          </div>
+        </div>
+
+        <section className="actions">
+          <button onClick={() => setModal("transfer")}>
+            ＋ تحويل أموال
+          </button>
+
+          <button onClick={() => setModal("add")}>
+            ＋ إضافة أموال
+          </button>
+
+          <button onClick={() => setModal("beneficiary")}>
+            ＋ إضافة مستفيد
+          </button>
+
+          <button onClick={() => setModal("cards")}>
+            ▣ البطاقات
+          </button>
+
+          <button onClick={() => setModal("bank")}>
+            🏦 ربط بنك
+          </button>
+
+          <button onClick={() => setModal("pro")} className="pro-button">
+            ⭐ lbléd Pro
+          </button>
+        </section>
+
+        <section className="recent">
+          <div className="merchant-banner">
+            <h2>💼 سيّر تجارتك بذكاء مع lbléd</h2>
+            <p>تابع مبيعاتك، مصاريفك وربحك من مكان واحد.</p>
+            <button onClick={() => setModal("pro")} className="primary">
+              ⭐ اكتشف lbléd Pro
+            </button>
+          </div>
+
+          <h2>آخر العمليات</h2>
+
+          <div className="transaction-tools">
+            <input
+              type="search"
+              value={transactionSearch}
+              onChange={(e) => setTransactionSearch(e.target.value)}
+              placeholder="🔎 ابحث في العمليات..."
+            />
+
+            <select
+              value={transactionFilter}
+              onChange={(e) => setTransactionFilter(e.target.value)}
+            >
+              <option value="all">كل العمليات</option>
+              <option value="income">الدخل</option>
+              <option value="expense">المصروفات</option>
+              <option value="transfer">التحويلات</option>
+            </select>
+          </div>
+
+          {filteredTransactions.length === 0 ? (
+            <p>لا توجد عمليات مطابقة.</p>
+          ) : (
+            filteredTransactions.slice(0, 10).map((item) => (
+              <div key={item.id}>
+                <span
+                  className={`transaction-icon transaction-${item.type}`}
+                >
+                  {getTransactionIcon(item.type)}
+                </span>
+
+                <span>
+                  {item.title}
+                  <small>
+                    {new Date(item.created_at).toLocaleString("ar-DZ")}
+                  </small>
+                </span>
+
+                <b
+                  dir="ltr"
+                  style={{
+                    color:
+                      item.amount >= 0
+                        ? "#70d99b"
+                        : "#f0aaa0",
+                  }}
+                >
+                  {item.amount >= 0 ? "+" : ""}
+                  {formatMoney(item.amount)}
+                </b>
+              </div>
+            ))
+          )}
+        </section>
+      </main>
+
+      {modal === "sale" && (
+        <div className="modal-backdrop" onClick={() => setModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close" onClick={() => setModal(null)}>×</button>
+            <h2>💰 تسجيل بيع</h2>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const amount = Number(e.currentTarget.amount.value);
+              const description = e.currentTarget.description.value;
+
+              if (!amount || amount <= 0) {
+                setError("أدخل مبلغ البيع");
+                return;
+              }
+
+              try {
+                setError("");
+                const response = await fetch(`${API}/business/sale`, {
+                  method: "POST",
+                  headers: {"Content-Type": "application/json"},
+                  body: JSON.stringify({amount, description})
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                  throw new Error(data.detail || "فشل تسجيل البيع");
+                }
+
+                setModal(null);
+                setMessage("تم تسجيل البيع بنجاح ✅");
+                addNotification(`بيع جديد: ${formatMoney(amount)} 💰`);
+                await loadData();
+              } catch (err) {
+                setError(err.message);
+              }
+            }}>
+              <label>مبلغ البيع</label>
+              <input name="amount" type="number" min="1" placeholder="مثال: 5000" />
+
+              <label>وصف البيع</label>
+              <input name="description" placeholder="مثال: بيع منتجات" />
+
+              <button className="primary" type="submit">
+                تسجيل البيع
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modal === "expense" && (
+        <div className="modal-backdrop" onClick={() => setModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close" onClick={() => setModal(null)}>×</button>
+            <h2>💸 تسجيل مصروف</h2>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const amount = Number(e.currentTarget.amount.value);
+              const description = e.currentTarget.description.value;
+
+              if (!amount || amount <= 0) {
+                setError("أدخل مبلغ المصروف");
+                return;
+              }
+
+              try {
+                setError("");
+                const response = await fetch(`${API}/business/expense`, {
+                  method: "POST",
+                  headers: {"Content-Type": "application/json"},
+                  body: JSON.stringify({amount, description})
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                  throw new Error(data.detail || "فشل تسجيل المصروف");
+                }
+
+                setModal(null);
+                setMessage("تم تسجيل المصروف بنجاح ✅");
+                addNotification(`مصروف جديد: ${formatMoney(amount)} 💸`);
+                await loadData();
+              } catch (err) {
+                setError(err.message);
+              }
+            }}>
+              <label>مبلغ المصروف</label>
+              <input name="amount" type="number" min="1" placeholder="مثال: 2000" />
+
+              <label>وصف المصروف</label>
+              <input name="description" placeholder="مثال: شراء بضاعة" />
+
+              <button className="primary" type="submit">
+                تسجيل المصروف
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modal === "beneficiary" && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setModal(null)}
+        >
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="close"
+              onClick={() => setModal(null)}
+            >
+              ×
+            </button>
+
+            <h2>إضافة مستفيد</h2>
+
+            <form onSubmit={addBeneficiary}>
+              <label>اسم المستفيد</label>
+              <input
+                value={beneficiaryForm.name}
+                onChange={(e) =>
+                  setBeneficiaryForm({
+                    ...beneficiaryForm,
+                    name: e.target.value,
+                  })
+                }
+                placeholder="مثال: محمد"
+              />
+
+              <label>رقم الحساب</label>
+              <input
+                dir="ltr"
+                value={beneficiaryForm.account_number}
+                onChange={(e) =>
+                  setBeneficiaryForm({
+                    ...beneficiaryForm,
+                    account_number: e.target.value,
+                  })
+                }
+                placeholder="رقم الحساب"
+              />
+
+              <label>البنك</label>
+              <input
+                value={beneficiaryForm.bank_name}
+                onChange={(e) =>
+                  setBeneficiaryForm({
+                    ...beneficiaryForm,
+                    bank_name: e.target.value,
+                  })
+                }
+                placeholder="اختياري"
+              />
+
+              <button className="primary" type="submit">
+                إضافة المستفيد
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modal === "transfer" && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setModal(null)}
+        >
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="close"
+              onClick={() => setModal(null)}
+            >
+              ×
+            </button>
+
+            <h2>تحويل أموال</h2>
+
+            <div
+              style={{
+                marginBottom: "16px",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                background: "#123b27",
+                border: "1px solid #285c40",
+              }}
+            >
+              <small>الرصيد المتاح</small>
+              <strong dir="ltr" style={{ display: "block", marginTop: "5px" }}>
+                {hidden ? "••••••••" : formatMoney(balance)}
+              </strong>
+            </div>
+
+            <form onSubmit={makeTransfer}>
+              <label>المستفيد</label>
+
+              <select
+                value={transfer.recipient}
+                onChange={(e) =>
+                  setTransfer({
+                    ...transfer,
+                    recipient: e.target.value,
+                  })
+                }
+              >
+                <option value="">اختر المستفيد</option>
+                {beneficiaries.map((b) => (
+                  <option key={b.id} value={b.account_number}>
+                    {b.name} — {b.account_number}
+                  </option>
+                ))}
+              </select>
+
+              {beneficiaries.length === 0 && (
+                <small>لا يوجد مستفيدون محفوظون حاليًا.</small>
+              )}
+
+              {transfer.recipient && (
+                <div
+                  style={{
+                    marginTop: "8px",
+                    marginBottom: "14px",
+                    padding: "10px 12px",
+                    borderRadius: "10px",
+                    background: "#f5f5f5",
+                  }}
+                >
+                  <small>المستفيد المحدد</small>
+                  <strong style={{ display: "block", marginTop: "4px" }}>
+                    {beneficiaries.find(
+                      (b) => b.account_number === transfer.recipient
+                    )?.name || transfer.recipient}
+                  </strong>
+                  <small dir="ltr" style={{ display: "block" }}>
+                    {transfer.recipient}
+                  </small>
+                </div>
+              )}
+
+              <label>المبلغ</label>
+
+              <input
+                type="number"
+                min="1"
+                value={transfer.amount}
+                onChange={(e) =>
+                  setTransfer({
+                    ...transfer,
+                    amount: e.target.value,
+                  })
+                }
+                placeholder="مثال: 50000"
+              />
+
+              <label>ملاحظة</label>
+
+              <input
+                value={transfer.note}
+                onChange={(e) =>
+                  setTransfer({
+                    ...transfer,
+                    note: e.target.value,
+                  })
+                }
+                placeholder="اختياري"
+              />
+
+              {transfer.recipient && Number(transfer.amount) > 0 && (
+                <div className="transfer-summary">
+                  <div className="transfer-summary-title">
+                    <span>ملخص التحويل</span>
+                    <span>💸</span>
+                  </div>
+
+                  <div className="transfer-row">
+                    <span>المستفيد</span>
+                    <strong>
+                      {beneficiaries.find(
+                        (b) => b.account_number === transfer.recipient
+                      )?.name || transfer.recipient}
+                    </strong>
+                  </div>
+
+                  <div className="transfer-row">
+                    <span>المبلغ</span>
+                    <strong dir="ltr">
+                      {formatMoney(Number(transfer.amount))}
+                    </strong>
+                  </div>
+
+                  <div className="transfer-row">
+                    <span>الرصيد بعد التحويل</span>
+                    <strong
+                      dir="ltr"
+                      className={
+                        balance - Number(transfer.amount) >= 0
+                          ? "transfer-positive"
+                          : "transfer-negative"
+                      }
+                    >
+                      {formatMoney(
+                        balance - Number(transfer.amount)
+                      )}
+                    </strong>
+                  </div>
+
+                  {balance - Number(transfer.amount) < 0 && (
+                    <div className="transfer-warning">
+                      ⚠️ المبلغ أكبر من الرصيد المتاح.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button
+                className="primary"
+                type="submit"
+                disabled={
+                  transferLoading ||
+                  !transfer.recipient ||
+                  Number(transfer.amount) <= 0
+                }
+              >
+                {transferLoading ? "⏳ جاري التحويل..." : "تأكيد التحويل"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modal === "add" && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setModal(null)}
+        >
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="close"
+              onClick={() => setModal(null)}
+            >
+              ×
+            </button>
+
+            <h2>إضافة أموال</h2>
+
+            <p>
+              سيتم إضافة المبلغ إلى رصيد الحساب التجريبي
+              وتسجيل العملية في قاعدة البيانات.
+            </p>
+
+            <button className="primary" onClick={addMoney}>
+              إضافة 100,000 DZD
+            </button>
+          </div>
+        </div>
+      )}
+
+      {modal === "bank" && (
+        <div className="modal-backdrop" onClick={() => setModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close" onClick={() => setModal(null)}>×</button>
+
+            <h2>🏦 ربط حساب بنكي</h2>
+            <p>اختر البنك الذي تريد ربطه بحساب lbléd.</p>
+
+            <div className="bank-list">
+              {[
+                "BNA — البنك الوطني الجزائري",
+                "CPA — القرض الشعبي الجزائري",
+                "BEA — بنك الجزائر الخارجي",
+                "BDL — بنك التنمية المحلية",
+                "BADR — بنك الفلاحة والتنمية الريفية",
+                "CNEP — بنك التوفير والاحتياط"
+              ].map((bank) => (
+                <button
+                  key={bank}
+                  className="bank-option"
+                  onClick={() => {
+                    setMessage("تم اختيار البنك. الربط الحقيقي يحتاج واجهة مصرفية معتمدة 🔐");
+                    setModal(null);
+                  }}
+                >
+                  🏦 {bank}
+                </button>
+              ))}
+            </div>
+
+            <small>
+              سيتم استخدام المصادقة البنكية الرسمية عند توفر واجهة الربط المعتمدة.
+            </small>
+          </div>
+        </div>
+      )}
+
+      {modal === "pro" && (
+        <div className="modal-backdrop" onClick={() => setModal(null)}>
+          <div className="modal pro-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close" onClick={() => setModal(null)}>×</button>
+
+            <div className="pro-badge">⭐ lbléd Pro</div>
+            <h2>حوّل أرقامك إلى قرارات أفضل</h2>
+
+            <p>
+              أدوات ذكية تساعدك على فهم نشاطك التجاري،
+              ومتابعة الربح والمصاريف واتخاذ قرارات أفضل.
+            </p>
+
+            <div className="pro-features">
+              <div>📊 تقارير مالية متقدمة</div>
+              <div>🧠 تحليل الربح والأداء</div>
+              <div>📅 تقارير شهرية</div>
+              <div>🔔 تنبيهات مالية ذكية</div>
+            </div>
+
+            {businessSummary && (
+              <div className="pro-profit-analysis">
+                <h3>🧠 أداء نشاطك</h3>
+
+                <div>
+                  💰 المبيعات:
+                  <strong>
+                    {" "}
+                    {Number(businessSummary.sales || 0).toLocaleString("ar-DZ")} دج
+                  </strong>
+                </div>
+
+                <div>
+                  💸 المصاريف:
+                  <strong>
+                    {" "}
+                    {Number(businessSummary.expenses || 0).toLocaleString("ar-DZ")} دج
+                  </strong>
+                </div>
+
+                <div>
+                  📈 الربح:
+                  <strong>
+                    {" "}
+                    {Number(businessSummary.profit || 0).toLocaleString("ar-DZ")} دج
+                  </strong>
+                </div>
+
+                {Number(businessSummary.sales || 0) > 0 ? (
+                  <div>
+                    📊 هامش الربح:
+                    <strong>
+                      {" "}
+                      {(
+                        (Number(businessSummary.profit || 0) /
+                          Number(businessSummary.sales || 1)) *
+                        100
+                      ).toFixed(1)}
+                      %
+                    </strong>
+                  </div>
+                ) : (
+                  <div>ℹ️ أضف مبيعات ومصاريف للحصول على التحليل.</div>
+                )}
+
+                {Number(businessSummary.sales || 0) > 0 && (
+                  <div>
+                    {(() => {
+                      const margin =
+                        (Number(businessSummary.profit || 0) /
+                          Number(businessSummary.sales || 1)) *
+                        100;
+
+                      if (margin >= 30) return "🏆 تقييم النشاط: ممتاز";
+                      if (margin >= 15) return "👍 تقييم النشاط: جيد";
+                      if (margin > 0) return "⚠️ تقييم النشاط: يحتاج تحسين";
+                      return "🔴 تقييم النشاط: يحتاج مراجعة";
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {smartAnalysis && (
+            <div className="pro-smart-analysis">
+              <h3>🧠 التحليل الذكي</h3>
+              <strong>{smartAnalysis.evaluation}</strong>
+              <p>{smartAnalysis.message}</p>
+              <p>💡 {smartAnalysis.recommendation}</p>
+              <small>هامش الربح: {smartAnalysis.margin}%</small>
+            </div>
+          )}
+
+          {monthlyReport?.months?.length > 0 && (
+              <div className="pro-report-preview">
+                <h3>📅 التقرير الشهري</h3>
+
+                {monthlyReport.months.map((month) => (
+                  <div key={month.month}>
+                    <strong>{month.month}</strong>
+                    {" — "}
+                    المبيعات: {Number(month.sales || 0).toLocaleString("ar-DZ")} دج
+                    {" · "}
+                    المصاريف: {Number(month.expenses || 0).toLocaleString("ar-DZ")} دج
+                    {" · "}
+                    الربح: {Number(month.profit || 0).toLocaleString("ar-DZ")} دج
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="pro-price">
+              <small>lbléd Pro</small>
+              <strong>1,000 دج في الشهر</strong>
+            </div>
+
+            {proStats && (
+              <div className="pro-interest-count">
+                ⭐ المهتمون حاليًا: <strong>{proStats.interested_users}</strong>
+              </div>
+            )}
+
+            <button
+              className="primary"
+              onClick={async () => {
+                try {
+                  const res = await fetch(`${API}/pro/interest`, {
+                    method: "POST"
+                  });
+                  const data = await res.json();
+
+                  if (!res.ok) {
+                    throw new Error(data.detail || "حدث خطأ");
+                  }
+
+                  setProInterested(true);
+                  await loadProStats();
+                  addNotification(data.message || "تم تسجيل اهتمامك بـ lbléd Pro ⭐");
+                  setMessage("شكرًا لاهتمامك بـ lbléd Pro ❤️");
+                  setModal(null);
+                } catch (err) {
+                  setError(err.message || "تعذر تسجيل الاهتمام");
+                }
+              }}
+            >
+              {proInterested ? "✓ تم تسجيل اهتمامك بـ lbléd Pro" : "⭐ أريد lbléd Pro"}
+            </button>
+
+            <small className="pro-note">
+              لا يوجد دفع الآن. هذه النسخة تجريبية.
+            </small>
+          </div>
+        </div>
+      )}
+
+      {modal === "cards" && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setModal(null)}
+        >
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="close"
+              onClick={() => setModal(null)}
+            >
+              ×
+            </button>
+
+            <h2>البطاقات</h2>
+
+            {cards.map((card) => (
+              <div
+                className={`virtual-card ${
+                  card.status === "frozen" ? "card-frozen" : ""
+                }`}
+                key={card.id}
+              >
+                <div className="card-brand">lbléd.</div>
+
+                <div className="card-top">
+                  <span className="card-chip">▰</span>
+                  <span className="card-contactless">)))</span>
+                </div>
+
+                <strong className="card-number">
+                  •••• •••• •••• {card.last4}
+                </strong>
+                <small>
+                  {card.card_type === "virtual"
+                    ? "بطاقة افتراضية"
+                    : "بطاقة"}
+                  {" · "}
+                  {card.status === "active"
+                    ? "نشطة"
+                    : card.status === "frozen"
+                    ? "مجمّدة"
+                    : card.status}
+                </small>
+
+                <div style={{ marginTop: "10px", display: "grid", gap: "4px" }}>
+                  <small>حامل البطاقة: {card.cardholder || "—"}</small>
+                  <small dir="ltr">تاريخ الانتهاء: {card.expiry || "—"}</small>
+                </div>
+
+                <button
+                  className="primary"
+                  onClick={() => toggleCardFreeze(card)}
+                >
+                  {card.status === "active"
+                    ? "❄️ تجميد البطاقة"
+                    : "🔓 إلغاء التجميد"}
+                </button>
+              </div>
+            ))}
+
+            <button
+              className="primary"
+              onClick={() => setModal(null)}
+            >
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")).render(<App />);
