@@ -15,6 +15,7 @@ function App() {
   );
   const [ownerKey, setOwnerKey] = React.useState("");
   const [ownerLoginLoading, setOwnerLoginLoading] = React.useState(false);
+const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   const [transactions, setTransactions] = React.useState([]);
   const [cards, setCards] = React.useState([]);
   const [beneficiaries, setBeneficiaries] = React.useState([]);
@@ -423,6 +424,43 @@ function App() {
   });
 
   if (!ownerToken) {
+    if (!showOwnerLogin) {
+      return (
+        <div className="app" dir="rtl">
+          <main style={{ maxWidth: "720px", margin: "0 auto", padding: "55px 20px" }}>
+            <div className="welcome" style={{ textAlign: "center" }}>
+              <div className="logo" style={{ fontSize: "52px", marginBottom: "18px" }}>
+                lbléd<span>.</span>
+              </div>
+              <h1>إدارة تجارتك ومالك من مكان واحد</h1>
+              <p style={{ lineHeight: "1.9", opacity: 0.85 }}>
+                منصة بسيطة تساعدك على متابعة المبيعات والمصاريف والأرباح
+                وتحليل نشاطك التجاري بوضوح.
+              </p>
+            </div>
+
+            <section className="recent" style={{ padding: "25px", marginTop: "25px" }}>
+              <h2>ماذا يوفر لك lbléd؟</h2>
+              <p>💰 متابعة المداخيل والمصاريف</p>
+              <p>📊 معرفة الأرباح والأداء التجاري</p>
+              <p>🔔 تنبيهات وتحليلات ذكية</p>
+              <button
+                onClick={() => setShowOwnerLogin(true)}
+                className="primary"
+                style={{ width: "100%", marginTop: "15px" }}
+              >
+                🔐 دخول المالك
+              </button>
+            </section>
+
+            <p style={{ textAlign: "center", marginTop: "30px", opacity: 0.65 }}>
+              lbléd — خدم تجارتك بذكاء.
+            </p>
+          </main>
+        </div>
+      );
+    }
+
     return (
       <div className="app" dir="rtl">
         <main style={{ maxWidth: "520px", margin: "0 auto", paddingTop: "70px" }}>
