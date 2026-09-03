@@ -521,6 +521,89 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
               </button>
             </section>
 
+            {modal === "register" && (
+              <div
+                className="modal-backdrop"
+                onClick={() => setModal(null)}
+              >
+                <div
+                  className="modal"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="close"
+                    onClick={() => setModal(null)}
+                  >
+                    ×
+                  </button>
+
+                  <h2>🆓 إنشاء حساب مجاني</h2>
+                  <p style={{ opacity: 0.75 }}>
+                    أنشئ حسابك في lbléd وابدأ الآن.
+                  </p>
+
+                  <form onSubmit={registerAccount}>
+                    <label>الاسم</label>
+                    <input
+                      value={registerForm.name}
+                      onChange={(e) =>
+                        setRegisterForm({
+                          ...registerForm,
+                          name: e.target.value,
+                        })
+                      }
+                      placeholder="مثال: محمد"
+                      minLength={2}
+                      maxLength={80}
+                      required
+                    />
+
+                    <label>البريد الإلكتروني</label>
+                    <input
+                      type="email"
+                      dir="ltr"
+                      value={registerForm.email}
+                      onChange={(e) =>
+                        setRegisterForm({
+                          ...registerForm,
+                          email: e.target.value,
+                        })
+                      }
+                      placeholder="example@email.com"
+                      required
+                    />
+
+                    <label>كلمة المرور</label>
+                    <input
+                      type="password"
+                      dir="ltr"
+                      value={registerForm.password}
+                      onChange={(e) =>
+                        setRegisterForm({
+                          ...registerForm,
+                          password: e.target.value,
+                        })
+                      }
+                      placeholder="6 أحرف على الأقل"
+                      minLength={6}
+                      maxLength={128}
+                      required
+                    />
+
+                    <button
+                      className="primary"
+                      type="submit"
+                      disabled={registerLoading}
+                    >
+                      {registerLoading
+                        ? "جاري إنشاء الحساب..."
+                        : "إنشاء الحساب"}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
             <p style={{ textAlign: "center", marginTop: "30px", opacity: 0.65 }}>
               lbléd — خدم تجارتك بذكاء.
             </p>
