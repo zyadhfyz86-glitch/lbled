@@ -1314,6 +1314,14 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
               </div>
             )}
 
+            <div className="pro-features">
+              <h3>⭐ ماذا تحصل مع lbléd Pro؟</h3>
+              <p>📊 تقارير مالية متقدمة</p>
+              <p>🧠 تحليل ذكي للربح والأداء</p>
+              <p>📅 تقارير شهرية ومقارنة الأداء</p>
+              <p>🔔 تنبيهات مالية واقتراحات ذكية</p>
+            </div>
+
             <div className="pro-price">
               <small>lbléd Pro</small>
               <strong>1,000 دج في الشهر</strong>
