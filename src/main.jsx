@@ -44,6 +44,13 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
 
   const [transferLoading, setTransferLoading] = React.useState(false);
 
+  const [registerForm, setRegisterForm] = React.useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [registerLoading, setRegisterLoading] = React.useState(false);
+
   const [beneficiaryForm, setBeneficiaryForm] = React.useState({
     name: "",
     account_number: "",
@@ -55,6 +62,41 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
       { id: Date.now(), text },
       ...prev,
     ].slice(0, 10));
+  }
+
+  async function registerAccount(e) {
+    e.preventDefault();
+    try {
+      setRegisterLoading(true);
+      setError("");
+      setMessage("");
+
+      const res = await fetch(`${API}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registerForm),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "فشل إنشاء الحساب");
+      }
+
+      setRegisterForm({
+        name: "",
+        email: "",
+        password: "",
+      });
+
+      setModal(null);
+      setMessage("تم إنشاء حسابك بنجاح ✅ يمكنك الآن تسجيل الدخول.");
+      setShowOwnerLogin(true);
+    } catch (err) {
+      setError(err.message || "فشل إنشاء الحساب");
+    } finally {
+      setRegisterLoading(false);
+    }
   }
 
   async function ownerLogin() {
@@ -473,7 +515,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
               <button
                 className="primary"
                 style={{ width: "100%", marginTop: "10px" }}
-                onClick={() => alert("إنشاء الحساب المجاني قريبًا 🚀")}
+                onClick={() => setModal("register")}
               >
                 🆓 إنشاء حساب مجاني
               </button>
@@ -938,6 +980,87 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
 
               <button className="primary" type="submit">
                 تسجيل المصروف
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modal === "register" && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setModal(null)}
+        >
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="close"
+              onClick={() => setModal(null)}
+            >
+              ×
+            </button>
+
+            <h2>🆓 إنشاء حساب مجاني</h2>
+            <p style={{ opacity: 0.75 }}>
+              أنشئ حسابك في lbléd وابدأ بإدارة أموالك وتجارتك.
+            </p>
+
+            <form onSubmit={registerAccount}>
+              <label>الاسم</label>
+              <input
+                value={registerForm.name}
+                onChange={(e) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    name: e.target.value,
+                  })
+                }
+                placeholder="مثال: محمد"
+                minLength={2}
+                maxLength={80}
+                required
+              />
+
+              <label>البريد الإلكتروني</label>
+              <input
+                type="email"
+                dir="ltr"
+                value={registerForm.email}
+                onChange={(e) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    email: e.target.value,
+                  })
+                }
+                placeholder="example@email.com"
+                required
+              />
+
+              <label>كلمة المرور</label>
+              <input
+                type="password"
+                dir="ltr"
+                value={registerForm.password}
+                onChange={(e) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    password: e.target.value,
+                  })
+                }
+                placeholder="6 أحرف على الأقل"
+                minLength={6}
+                maxLength={128}
+                required
+              />
+
+              <button
+                className="primary"
+                type="submit"
+                disabled={registerLoading}
+              >
+                {registerLoading ? "جاري إنشاء الحساب..." : "إنشاء الحساب"}
               </button>
             </form>
           </div>
