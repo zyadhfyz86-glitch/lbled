@@ -172,7 +172,7 @@ function App() {
     loadMonthlyReport();
     loadBusinessSummary();
     loadSmartAnalysis();
-  }, []);
+  }, [ownerToken]);
 
   async function makeTransfer(e) {
     e.preventDefault();
