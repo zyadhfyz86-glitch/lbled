@@ -123,6 +123,11 @@ function App() {
   }
 
   async function loadData() {
+    if (!ownerToken) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
