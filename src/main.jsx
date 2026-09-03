@@ -16,6 +16,11 @@ function App() {
   const [ownerKey, setOwnerKey] = React.useState("");
   const [ownerLoginLoading, setOwnerLoginLoading] = React.useState(false);
 const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
+  const [showRegister, setShowRegister] = React.useState(false);
+  const [registerName, setRegisterName] = React.useState("");
+  const [registerEmail, setRegisterEmail] = React.useState("");
+  const [registerPassword, setRegisterPassword] = React.useState("");
+  const [registerLoading, setRegisterLoading] = React.useState(false);
   const [transactions, setTransactions] = React.useState([]);
   const [cards, setCards] = React.useState([]);
   const [beneficiaries, setBeneficiaries] = React.useState([]);
@@ -55,6 +60,47 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
       { id: Date.now(), text },
       ...prev,
     ].slice(0, 10));
+  }
+
+  async function registerUser() {
+    try {
+      setRegisterLoading(true);
+      setError("");
+
+      if (!registerName.trim() || !registerEmail.trim() || !registerPassword) {
+        throw new Error("الاسم والبريد وكلمة المرور مطلوبة");
+      }
+
+      if (registerPassword.length < 6) {
+        throw new Error("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+      }
+
+      const res = await fetch(`${API}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: registerName.trim(),
+          email: registerEmail.trim(),
+          password: registerPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "فشل إنشاء الحساب");
+      }
+
+      setMessage("تم إنشاء حسابك بنجاح 🎉");
+      setRegisterName("");
+      setRegisterEmail("");
+      setRegisterPassword("");
+      setShowRegister(false);
+    } catch (err) {
+      setError(err.message || "تعذر إنشاء الحساب");
+    } finally {
+      setRegisterLoading(false);
+    }
   }
 
   async function ownerLogin() {
@@ -145,7 +191,74 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   }
 
   async function loadData() {
-    if (!ownerToken) {
+    if (showRegister) {
+    return (
+      <div className="app" dir="rtl">
+        <main style={{ maxWidth: "520px", margin: "0 auto", paddingTop: "55px" }}>
+          <div className="welcome" style={{ textAlign: "center" }}>
+            <div className="logo" style={{ fontSize: "48px", marginBottom: "18px" }}>
+              lbléd<span>.</span>
+            </div>
+            <h1>🆓 إنشاء حساب مجاني</h1>
+            <p>ابدأ بإدارة تجارتك ومصاريفك وأرباحك بسهولة.</p>
+          </div>
+
+          {error && (
+            <div className="error" style={{ marginTop: "20px" }}>
+              {error}
+            </div>
+          )}
+
+          <section className="recent" style={{ padding: "25px", marginTop: "25px" }}>
+            <input
+              type="text"
+              placeholder="الاسم"
+              value={registerName}
+              onChange={(e) => setRegisterName(e.target.value)}
+              style={{ width: "100%", marginBottom: "12px" }}
+            />
+
+            <input
+              type="email"
+              placeholder="البريد الإلكتروني"
+              value={registerEmail}
+              onChange={(e) => setRegisterEmail(e.target.value)}
+              style={{ width: "100%", marginBottom: "12px" }}
+            />
+
+            <input
+              type="password"
+              placeholder="كلمة المرور"
+              value={registerPassword}
+              onChange={(e) => setRegisterPassword(e.target.value)}
+              style={{ width: "100%", marginBottom: "15px" }}
+            />
+
+            <button
+              className="primary"
+              style={{ width: "100%" }}
+              onClick={registerUser}
+              disabled={registerLoading}
+            >
+              {registerLoading ? "جاري إنشاء الحساب..." : "إنشاء الحساب"}
+            </button>
+
+            <button
+              onClick={() => {
+                setShowRegister(false);
+                setError("");
+              }}
+              style={{ width: "100%", marginTop: "10px" }}
+            >
+              رجوع
+            </button>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (!ownerToken) {
       setLoading(false);
       return;
     }
@@ -473,7 +586,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
               <button
                 className="primary"
                 style={{ width: "100%", marginTop: "10px" }}
-                onClick={() => alert("إنشاء الحساب المجاني قريبًا 🚀")}
+                onClick={() => setShowRegister(true)}
               >
                 🆓 إنشاء حساب مجاني
               </button>
