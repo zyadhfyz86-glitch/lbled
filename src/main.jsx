@@ -10,6 +10,11 @@ function formatMoney(value) {
 
 function App() {
   const [account, setAccount] = React.useState(null);
+  const [ownerToken, setOwnerToken] = React.useState(
+    () => sessionStorage.getItem("lbled_owner_token") || ""
+  );
+  const [ownerKey, setOwnerKey] = React.useState("");
+  const [ownerLoginLoading, setOwnerLoginLoading] = React.useState(false);
   const [transactions, setTransactions] = React.useState([]);
   const [cards, setCards] = React.useState([]);
   const [beneficiaries, setBeneficiaries] = React.useState([]);
@@ -48,6 +53,33 @@ function App() {
       { id: Date.now(), text },
       ...prev,
     ].slice(0, 10));
+  }
+
+  async function ownerLogin() {
+    try {
+      setOwnerLoginLoading(true);
+      setError("");
+
+      const res = await fetch(`${API}/owner/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: ownerKey }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "فشل تسجيل الدخول");
+      }
+
+      sessionStorage.setItem("lbled_owner_token", data.token);
+      setOwnerToken(data.token);
+      setOwnerKey("");
+    } catch (err) {
+      setError(err.message || "فشل تسجيل الدخول");
+    } finally {
+      setOwnerLoginLoading(false);
+    }
   }
 
   async function loadProStats() {
@@ -95,12 +127,16 @@ function App() {
       setLoading(true);
       setError("");
 
+      const authHeaders = ownerToken
+        ? { Authorization: `Bearer ${ownerToken}` }
+        : {};
+
       const [accountRes, transactionsRes, cardsRes, beneficiariesRes] =
         await Promise.all([
-          fetch(`${API}/account`),
-          fetch(`${API}/transactions`),
-          fetch(`${API}/cards`),
-          fetch(`${API}/beneficiaries`),
+          fetch(`${API}/account`, { headers: authHeaders }),
+          fetch(`${API}/transactions`, { headers: authHeaders }),
+          fetch(`${API}/cards`, { headers: authHeaders }),
+          fetch(`${API}/beneficiaries`, { headers: authHeaders }),
         ]);
 
       if (!accountRes.ok || !transactionsRes.ok || !cardsRes.ok) {
@@ -369,6 +405,64 @@ function App() {
 
     return matchesSearch && matchesFilter;
   });
+
+  if (!ownerToken) {
+    return (
+      <div className="app" dir="rtl">
+        <main style={{ maxWidth: "520px", margin: "0 auto", paddingTop: "70px" }}>
+          <div className="welcome" style={{ textAlign: "center" }}>
+            <div className="logo" style={{ fontSize: "42px", marginBottom: "25px" }}>
+              lbléd<span>.</span>
+            </div>
+            <h1>🔐 دخول المالك</h1>
+            <p>هذه المنطقة خاصة بصاحب الحساب.</p>
+          </div>
+
+          {error && (
+            <div style={{
+              marginBottom: "15px",
+              padding: "14px",
+              borderRadius: "14px",
+              background: "#3b1717",
+              color: "#ffb5ae",
+              border: "1px solid #71312b"
+            }}>
+              {error}
+            </div>
+          )}
+
+          <section className="recent" style={{ padding: "22px" }}>
+            <input
+              type="password"
+              value={ownerKey}
+              onChange={(e) => setOwnerKey(e.target.value)}
+              placeholder="مفتاح المالك"
+              autoComplete="current-password"
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "14px",
+                borderRadius: "12px",
+                border: "1px solid #28543c",
+                background: "#0c2116",
+                color: "#dff8e9",
+                marginBottom: "14px"
+              }}
+            />
+
+            <button
+              onClick={ownerLogin}
+              disabled={ownerLoginLoading || !ownerKey}
+              className="primary"
+              style={{ width: "100%" }}
+            >
+              {ownerLoginLoading ? "جاري الدخول..." : "دخول آمن"}
+            </button>
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="app" dir="rtl">
