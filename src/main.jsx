@@ -93,6 +93,7 @@ function App() {
   }
 
   async function loadBusinessSummary() {
+    if (!ownerToken) return;
     try {
       const res = await fetch(`${API}/business/summary`);
       if (res.ok) {
@@ -103,6 +104,7 @@ function App() {
   }
 
   async function loadSmartAnalysis() {
+    if (!ownerToken) return;
     try {
       const res = await fetch(`${API}/business/smart-analysis`);
       if (res.ok) {
@@ -113,6 +115,7 @@ function App() {
   }
 
   async function loadMonthlyReport() {
+    if (!ownerToken) return;
     try {
       const res = await fetch(`${API}/business/monthly-report`);
       if (res.ok) {
