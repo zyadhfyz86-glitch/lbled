@@ -123,7 +123,9 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   async function loadSmartAnalysis() {
     if (!ownerToken) return;
     try {
-      const res = await fetch(`${API}/business/smart-analysis`);
+      const res = await fetch(`${API}/business/smart-analysis`, {
+        headers: { Authorization: `Bearer ${ownerToken}` },
+      });
       if (res.ok) {
         const data = await res.json();
         setSmartAnalysis(data);
