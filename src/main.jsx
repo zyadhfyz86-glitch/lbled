@@ -99,6 +99,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
 
       sessionStorage.setItem("lbled_user_token", data.token);
       setOwnerToken("");
+      setUserToken(data.token);
       setModal(null);
       setMessage("تم إنشاء حسابك بنجاح ✅ مرحبًا بك في lbléd.");
     } catch (err) {
