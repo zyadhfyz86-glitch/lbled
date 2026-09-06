@@ -720,7 +720,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
                     >
                       {registerLoading
                         ? "جاري إنشاء الحساب..."
-                        : "إنشاء الحساب"}
+                        : "متابعة الاشتراك"}
                     </button>
                   </form>
                 </div>
