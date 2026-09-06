@@ -33,6 +33,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   const [message, setMessage] = React.useState("");
   const [notifications, setNotifications] = React.useState([]);
   const [error, setError] = React.useState("");
+  const [paymentInfo, setPaymentInfo] = React.useState(null);
   const [proStats, setProStats] = React.useState(null);
   const [proInterested, setProInterested] = React.useState(false);
   const [proInterestedUsers, setProInterestedUsers] = React.useState([]);
@@ -118,6 +119,15 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
       setModal("payment");
       setMessage("");
       setError("");
+
+      const paymentRes = await fetch(`${API}/subscription/payment-info`, {
+        headers: { Authorization: `Bearer ${data.token}` },
+      });
+      const paymentData = await paymentRes.json();
+      if (!paymentRes.ok) {
+        throw new Error(paymentData.detail || "تعذر جلب معلومات الدفع");
+      }
+      setPaymentInfo(paymentData);
     } catch (err) {
       setError(err.message || "فشل إنشاء الحساب");
     } finally {
@@ -651,7 +661,11 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
                   <button className="close" onClick={() => setModal(null)}>×</button>
                   <h2>💳 إتمام الاشتراك</h2>
                   <p>قيمة الاشتراك: <strong>1000 دج / شهر</strong></p>
-                  <p>أكمل الدفع ثم اضغط على الزر أدناه لإرسال طلب المراجعة.</p>
+                  <p>أكمل الدفع عبر CCP:</p>
+                  <div style={{padding:"12px",margin:"10px 0",borderRadius:"10px",background:"rgba(255,255,255,.08)"}}>
+                    <strong dir="ltr">{paymentInfo?.ccp || "جاري تحميل رقم CCP..."}</strong>
+                  </div>
+                  <p>بعد الدفع اضغط على «أتممت الدفع» لإرسال الطلب للمراجعة.</p>
                   <button
                     className="primary"
                     onClick={async () => {
