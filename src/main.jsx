@@ -569,7 +569,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
                 style={{ width: "100%", marginTop: "10px" }}
                 onClick={() => setModal("register")}
               >
-                🆓 إنشاء حساب مجاني
+                💳 الاشتراك الآن — 1000 دج/شهر
               </button>
             </section>
 
@@ -645,9 +645,9 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
                     ×
                   </button>
 
-                  <h2>🆓 إنشاء حساب مجاني</h2>
+                  <h2>💳 الاشتراك الآن — 1000 دج/شهر</h2>
                   <p style={{ opacity: 0.75 }}>
-                    أنشئ حسابك في lbléd وابدأ الآن.
+                    اشترك في lbléd مقابل 1000 دج شهريًا وابدأ الآن.
                   </p>
 
                   <form onSubmit={registerAccount}>
