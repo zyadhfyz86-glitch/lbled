@@ -1670,6 +1670,14 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
               <strong>{smartAnalysis.evaluation}</strong>
               <p>{smartAnalysis.message}</p>
               <p>💡 {smartAnalysis.recommendation}</p>
+              {smartAnalysis.smart_tips?.length > 0 && (
+                <div className="smart-tips">
+                  <strong>✨ نصائح lbléd الذكية</strong>
+                  {smartAnalysis.smart_tips.map((tip, index) => (
+                    <p key={index}>• {tip}</p>
+                  ))}
+                </div>
+              )}
               <small>هامش الربح: {smartAnalysis.margin}%</small>
             </div>
           )}
