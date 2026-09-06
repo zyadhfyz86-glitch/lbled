@@ -100,8 +100,23 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
       sessionStorage.setItem("lbled_user_token", data.token);
       setOwnerToken("");
       setUserToken(data.token);
+
+      const subRes = await fetch(`${API}/subscription/request`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${data.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const subData = await subRes.json();
+
+      if (!subRes.ok) {
+        throw new Error(subData.detail || "تعذر إنشاء طلب الاشتراك");
+      }
+
       setModal(null);
-      setMessage("تم إنشاء حسابك بنجاح ✅ مرحبًا بك في lbléd.");
+      setMessage("تم إنشاء الحساب وطلب الاشتراك بـ1000 دج شهريًا ✅ أكمل الدفع ثم أرسل إثبات الدفع.");
     } catch (err) {
       setError(err.message || "فشل إنشاء الحساب");
     } finally {
