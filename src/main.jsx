@@ -37,6 +37,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   const [proStats, setProStats] = React.useState(null);
   const [proInterested, setProInterested] = React.useState(false);
   const [proInterestedUsers, setProInterestedUsers] = React.useState([]);
+  const [subscriptions, setSubscriptions] = React.useState([]);
   const [monthlyReport, setMonthlyReport] = React.useState(null);
   const [businessSummary, setBusinessSummary] = React.useState(null);
   const [smartAnalysis, setSmartAnalysis] = React.useState(null);
@@ -207,6 +208,34 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
     } catch {}
   }
 
+  async function loadSubscriptions() {
+    if (!ownerToken) return;
+    try {
+      const res = await fetch(`${API}/subscriptions`, {
+        headers: { Authorization: `Bearer ${ownerToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSubscriptions(data.subscriptions || []);
+      }
+    } catch {}
+  }
+
+  async function approveSubscription(id) {
+    try {
+      const res = await fetch(`${API}/subscriptions/${id}/approve`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${ownerToken}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "تعذر اعتماد الاشتراك");
+      setMessage("تم تفعيل الاشتراك لمدة 30 يومًا ✅");
+      loadSubscriptions();
+    } catch (err) {
+      setError(err.message || "حدث خطأ");
+    }
+  }
+
   async function loadProStats() {
     try {
       const res = await fetch(`${API}/pro/stats`);
@@ -304,6 +333,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
     loadData();
     loadProStats();
     loadProInterestedUsers();
+    loadSubscriptions();
     loadMonthlyReport();
     loadBusinessSummary();
     loadSmartAnalysis();
@@ -908,6 +938,31 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
             notifications.map((item) => (
               <div key={item.id}>
                 <span>{item.text}</span>
+              </div>
+            ))
+          )}
+        </section>
+
+        <section className="recent" style={{ marginBottom: "18px" }}>
+          <h2>💳 اشتراكات العملاء</h2>
+          {subscriptions.length === 0 ? (
+            <p style={{ color: "#789687" }}>لا توجد اشتراكات.</p>
+          ) : (
+            subscriptions.map((item) => (
+              <div key={item.id} style={{ marginBottom: "14px", paddingBottom: "12px", borderBottom: "1px solid #28543c" }}>
+                <b>{item.name || item.email || "مستخدم"}</b>
+                <small style={{ display: "block", color: "#789687" }}>
+                  {item.email || "—"} · {item.amount} دج · {item.status}
+                </small>
+                {item.status === "payment_review" && (
+                  <button
+                    className="primary"
+                    style={{ marginTop: "8px" }}
+                    onClick={() => approveSubscription(item.id)}
+                  >
+                    ✅ اعتماد وتفعيل 30 يومًا
+                  </button>
+                )}
               </div>
             ))
           )}
