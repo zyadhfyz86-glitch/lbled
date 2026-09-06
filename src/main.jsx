@@ -1103,25 +1103,13 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
         </div>
 
         <section className="actions">
-          <button onClick={() => setModal("transfer")}>
-            ＋ تحويل أموال
-          </button>
 
           <button onClick={() => setModal("add")}>
             ＋ إضافة أموال
           </button>
 
-          <button onClick={() => setModal("beneficiary")}>
-            ＋ إضافة مستفيد
-          </button>
 
-          <button onClick={() => setModal("cards")}>
-            ▣ البطاقات
-          </button>
 
-          <button onClick={() => setModal("bank")}>
-            🏦 ربط بنك
-          </button>
 
           <button onClick={() => setModal("pro")} className="pro-button">
             ⭐ lbléd Pro
