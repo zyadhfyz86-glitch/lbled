@@ -1104,9 +1104,6 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
 
         <section className="actions">
 
-          <button onClick={() => setModal("add")}>
-            ＋ إضافة أموال
-          </button>
 
 
 
