@@ -115,8 +115,9 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
         throw new Error(subData.detail || "تعذر إنشاء طلب الاشتراك");
       }
 
-      setModal(null);
-      setMessage("تم إنشاء الحساب وطلب الاشتراك بـ1000 دج شهريًا ✅ أكمل الدفع ثم أرسل إثبات الدفع.");
+      setModal("payment");
+      setMessage("");
+      setError("");
     } catch (err) {
       setError(err.message || "فشل إنشاء الحساب");
     } finally {
@@ -644,7 +645,39 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   </div>
 )}
 
-{modal === "register" && (
+{modal === "payment" && (
+              <div className="modal-backdrop" onClick={() => setModal(null)}>
+                <div className="modal" onClick={(e) => e.stopPropagation()}>
+                  <button className="close" onClick={() => setModal(null)}>×</button>
+                  <h2>💳 إتمام الاشتراك</h2>
+                  <p>قيمة الاشتراك: <strong>1000 دج / شهر</strong></p>
+                  <p>أكمل الدفع ثم اضغط على الزر أدناه لإرسال طلب المراجعة.</p>
+                  <button
+                    className="primary"
+                    onClick={async () => {
+                      try {
+                        setError("");
+                        const token = sessionStorage.getItem("lbled_user_token");
+                        const res = await fetch(`${API}/subscription/paid`, {
+                          method: "POST",
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.detail || "تعذر إرسال الدفع");
+                        setModal(null);
+                        setMessage("تم إرسال الدفع للمراجعة ✅ سيتم تفعيل الاشتراك بعد التحقق.");
+                      } catch (err) {
+                        setError(err.message || "حدث خطأ");
+                      }
+                    }}
+                  >
+                    أتممت الدفع
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {modal === "register" && (
               <div
                 className="modal-backdrop"
                 onClick={() => setModal(null)}
