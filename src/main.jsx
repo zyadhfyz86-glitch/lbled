@@ -171,7 +171,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
 
     try {
       const res = await fetch(`${API}/pro/interested`, {
-        headers: { Authorization: `Bearer ${ownerToken}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
 
       if (res.ok) {
@@ -194,7 +194,9 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   async function loadBusinessSummary() {
     if (!authToken) return;
     try {
-      const res = await fetch(`${API}/business/summary`);
+      const res = await fetch(`${API}/business/summary`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       if (res.ok) {
         const data = await res.json();
         setBusinessSummary(data);
@@ -206,7 +208,7 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
     if (!authToken) return;
     try {
       const res = await fetch(`${API}/business/smart-analysis`, {
-        headers: { Authorization: `Bearer ${ownerToken}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -218,7 +220,9 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   async function loadMonthlyReport() {
     if (!authToken) return;
     try {
-      const res = await fetch(`${API}/business/monthly-report`);
+      const res = await fetch(`${API}/business/monthly-report`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       if (res.ok) {
         const data = await res.json();
         setMonthlyReport(data);
