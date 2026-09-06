@@ -1694,7 +1694,10 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
               onClick={async () => {
                 try {
                   const res = await fetch(`${API}/pro/interest`, {
-                    method: "POST"
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${authToken}`
+                    }
                   });
                   const data = await res.json();
 
