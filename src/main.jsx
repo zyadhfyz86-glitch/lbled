@@ -307,8 +307,8 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
           fetch(`${API}/beneficiaries`, { headers: authHeaders }),
         ]);
 
-      if (!accountRes.ok || !transactionsRes.ok || !cardsRes.ok) {
-        throw new Error("تعذر الاتصال بالـBackend");
+      if (!accountRes.ok || !transactionsRes.ok) {
+        throw new Error("تعذر تحميل بيانات الحساب");
       }
 
       const accountData = await accountRes.json();
