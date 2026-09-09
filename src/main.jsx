@@ -677,6 +677,18 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
           required
         />
 
+        {error && (
+          <div style={{color:"#ff6b6b",margin:"10px 0",padding:"10px",borderRadius:"8px",background:"rgba(255,0,0,.08)"}}>
+            {error}
+          </div>
+        )}
+
+        {message && (
+          <div style={{color:"#51cf66",margin:"10px 0",padding:"10px",borderRadius:"8px",background:"rgba(0,255,100,.08)"}}>
+            {message}
+          </div>
+        )}
+
         <button className="primary" type="submit">
           دخول
         </button>
