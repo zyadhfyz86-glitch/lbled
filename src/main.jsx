@@ -1607,112 +1607,6 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
             </p>
 
             <div className="pro-features">
-              <div>📊 تقارير مالية متقدمة</div>
-              <div>🧠 تحليل الربح والأداء</div>
-              <div>📅 تقارير شهرية</div>
-              <div>🔔 تنبيهات مالية ذكية</div>
-            </div>
-
-            {businessSummary && (
-              <div className="pro-profit-analysis">
-                <h3>🧠 أداء نشاطك</h3>
-
-                <div>
-                  💰 المبيعات:
-                  <strong>
-                    {" "}
-                    {Number(businessSummary.sales || 0).toLocaleString("ar-DZ")} دج
-                  </strong>
-                </div>
-
-                <div>
-                  💸 المصاريف:
-                  <strong>
-                    {" "}
-                    {Number(businessSummary.expenses || 0).toLocaleString("ar-DZ")} دج
-                  </strong>
-                </div>
-
-                <div>
-                  📈 الربح:
-                  <strong>
-                    {" "}
-                    {Number(businessSummary.profit || 0).toLocaleString("ar-DZ")} دج
-                  </strong>
-                </div>
-
-                {Number(businessSummary.sales || 0) > 0 ? (
-                  <div>
-                    📊 هامش الربح:
-                    <strong>
-                      {" "}
-                      {(
-                        (Number(businessSummary.profit || 0) /
-                          Number(businessSummary.sales || 1)) *
-                        100
-                      ).toFixed(1)}
-                      %
-                    </strong>
-                  </div>
-                ) : (
-                  <div>ℹ️ أضف مبيعات ومصاريف للحصول على التحليل.</div>
-                )}
-
-                {Number(businessSummary.sales || 0) > 0 && (
-                  <div>
-                    {(() => {
-                      const margin =
-                        (Number(businessSummary.profit || 0) /
-                          Number(businessSummary.sales || 1)) *
-                        100;
-
-                      if (margin >= 30) return "🏆 تقييم النشاط: ممتاز";
-                      if (margin >= 15) return "👍 تقييم النشاط: جيد";
-                      if (margin > 0) return "⚠️ تقييم النشاط: يحتاج تحسين";
-                      return "🔴 تقييم النشاط: يحتاج مراجعة";
-                    })()}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {smartAnalysis && (
-            <div className="pro-smart-analysis">
-              <h3>🧠 التحليل الذكي</h3>
-              <strong>{smartAnalysis.evaluation}</strong>
-              <p>{smartAnalysis.message}</p>
-              <p>💡 {smartAnalysis.recommendation}</p>
-              {smartAnalysis.smart_tips?.length > 0 && (
-                <div className="smart-tips">
-                  <strong>✨ نصائح lbléd الذكية</strong>
-                  {smartAnalysis.smart_tips.map((tip, index) => (
-                    <p key={index}>• {tip}</p>
-                  ))}
-                </div>
-              )}
-              <small>هامش الربح: {smartAnalysis.margin}%</small>
-            </div>
-          )}
-
-          {monthlyReport?.months?.length > 0 && (
-              <div className="pro-report-preview">
-                <h3>📅 التقرير الشهري</h3>
-
-                {monthlyReport.months.map((month) => (
-                  <div key={month.month}>
-                    <strong>{month.month}</strong>
-                    {" — "}
-                    المبيعات: {Number(month.sales || 0).toLocaleString("ar-DZ")} دج
-                    {" · "}
-                    المصاريف: {Number(month.expenses || 0).toLocaleString("ar-DZ")} دج
-                    {" · "}
-                    الربح: {Number(month.profit || 0).toLocaleString("ar-DZ")} دج
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="pro-features">
               <h3>⭐ ماذا تحصل مع lbléd Pro؟</h3>
               <p>📊 تقارير مالية متقدمة</p>
               <p>🧠 تحليل ذكي للربح والأداء</p>
@@ -1722,17 +1616,26 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
 
             <div className="pro-price">
               <small>lbléd Pro</small>
-              <strong>1,000 دج في الشهر</strong>
+              <strong>1,000 دج / الشهر</strong>
             </div>
 
-            {proStats && (
-              <div className="pro-interest-count">
-                ⭐ المهتمون حاليًا: <strong>{proStats.interested_users}</strong>
-              </div>
-            )}
+            <div style={{
+              marginTop: "18px",
+              padding: "16px",
+              borderRadius: "14px",
+              background: "rgba(255,255,255,.05)",
+              lineHeight: "1.8"
+            }}>
+              <strong>طريقة الاشتراك</strong>
+              <br />
+              اضغط على زر الاشتراك لتسجيل طلبك.
+              بعد ذلك يتم إرسال تعليمات الدفع الرسمية لك،
+              ثم يتم تفعيل الاشتراك بعد التحقق من الدفع.
+            </div>
 
             <button
               className="primary"
+              style={{width: "100%", marginTop: "18px"}}
               onClick={async () => {
                 try {
                   const res = await fetch(`${API}/pro/interest`, {
@@ -1741,27 +1644,30 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
                       Authorization: `Bearer ${authToken}`
                     }
                   });
+
                   const data = await res.json();
 
                   if (!res.ok) {
-                    throw new Error(data.detail || "حدث خطأ");
+                    throw new Error(data.detail || "تعذر تسجيل طلب الاشتراك");
                   }
 
                   setProInterested(true);
-                  await loadProStats();
-                  addNotification(data.message || "تم تسجيل اهتمامك بـ lbléd Pro ⭐");
-                  setMessage("شكرًا لاهتمامك بـ lbléd Pro ❤️");
+                  addNotification("تم تسجيل طلب الاشتراك بنجاح ✅");
+                  setMessage("تم تسجيل طلب اشتراكك بنجاح ✅");
                   setModal(null);
+
                 } catch (err) {
-                  setError(err.message || "تعذر تسجيل الاهتمام");
+                  setError(err.message || "تعذر تسجيل طلب الاشتراك");
                 }
               }}
             >
-              {proInterested ? "✓ تم تسجيل اهتمامك بـ lbléd Pro" : "⭐ أريد lbléd Pro"}
+              {proInterested
+                ? "✓ تم تسجيل طلب الاشتراك"
+                : "اشترك الآن — 1,000 دج / شهر"}
             </button>
 
             <small className="pro-note">
-              لا يوجد دفع الآن. هذه النسخة تجريبية.
+              الاشتراك شهري، والتفعيل يتم بعد التحقق من الدفع.
             </small>
           </div>
         </div>
