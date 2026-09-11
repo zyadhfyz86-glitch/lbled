@@ -1653,7 +1653,8 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
           <strong>💳 معلومات الدفع الرسمية</strong>
           <p>المبلغ: <b>1,000 دج</b></p>
           <p>طريقة الدفع: <b>{paymentInfo?.payment_method || "CCP"}</b></p>
-          {paymentInfo?.ccp && <p>المعرّف الرسمي: <b>{paymentInfo.ccp}</b></p>}
+          {paymentInfo?.ccp && <p>CCP: <b>{paymentInfo.ccp}</b></p>}
+          {paymentInfo?.cle && <p>CLE: <b>{paymentInfo.cle}</b></p>}
 
           <input
             type="text"
