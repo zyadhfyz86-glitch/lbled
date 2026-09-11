@@ -33,8 +33,11 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   const [message, setMessage] = React.useState("");
   const [notifications, setNotifications] = React.useState([]);
   const [error, setError] = React.useState("");
-  const [paymentInfo, setPaymentInfo] = React.useState(null);
   const [proStats, setProStats] = React.useState(null);
+  const [subscription, setSubscription] = React.useState(null);
+  const [paymentInfo, setPaymentInfo] = React.useState(null);
+  const [paymentReference, setPaymentReference] = React.useState("");
+  const [subscriptionLoading, setSubscriptionLoading] = React.useState(false);
   const [proInterested, setProInterested] = React.useState(false);
   const [proInterestedUsers, setProInterestedUsers] = React.useState([]);
   const [subscriptions, setSubscriptions] = React.useState([]);
@@ -1594,84 +1597,120 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
       )}
 
       {modal === "pro" && (
-        <div className="modal-backdrop" onClick={() => setModal(null)}>
-          <div className="modal pro-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="close" onClick={() => setModal(null)}>×</button>
+  <div className="modal-overlay" onClick={() => setModal(null)}>
+    <div className="modal pro-modal" onClick={e => e.stopPropagation()}>
+      <button className="modal-close" onClick={() => setModal(null)}>×</button>
 
-            <div className="pro-badge">⭐ lbléd Pro</div>
-            <h2>حوّل أرقامك إلى قرارات أفضل</h2>
+      <h2>⭐ lbléd Pro</h2>
+      <p>إدارة مالية احترافية لنشاطك التجاري.</p>
 
-            <p>
-              أدوات ذكية تساعدك على فهم نشاطك التجاري،
-              ومتابعة الربح والمصاريف واتخاذ قرارات أفضل.
-            </p>
+      <div className="pro-features">
+        <p>📊 تقارير مالية متقدمة</p>
+        <p>🧠 تحليل ذكي للربح والأداء</p>
+        <p>📅 تقارير شهرية ومقارنة الأداء</p>
+        <p>🔔 تنبيهات واقتراحات مالية ذكية</p>
+      </div>
 
-            <div className="pro-features">
-              <h3>⭐ ماذا تحصل مع lbléd Pro؟</h3>
-              <p>📊 تقارير مالية متقدمة</p>
-              <p>🧠 تحليل ذكي للربح والأداء</p>
-              <p>📅 تقارير شهرية ومقارنة الأداء</p>
-              <p>🔔 تنبيهات مالية واقتراحات ذكية</p>
-            </div>
+      <div className="pro-price">
+        <small>الاشتراك الشهري</small>
+        <strong>1,000 دج / شهر</strong>
+      </div>
 
-            <div className="pro-price">
-              <small>lbléd Pro</small>
-              <strong>1,000 دج / الشهر</strong>
-            </div>
+      {!subscription && (
+        <button
+          className="primary-btn"
+          disabled={subscriptionLoading}
+          onClick={async () => {
+            setSubscriptionLoading(true);
+            try {
+              const res = await fetch(`${API}/subscription/request`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${authToken}` }
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.detail || "تعذر إنشاء طلب الاشتراك");
 
-            <div style={{
-              marginTop: "18px",
-              padding: "16px",
-              borderRadius: "14px",
-              background: "rgba(255,255,255,.05)",
-              lineHeight: "1.8"
-            }}>
-              <strong>طريقة الاشتراك</strong>
-              <br />
-              اضغط على زر الاشتراك لتسجيل طلبك.
-              بعد ذلك يتم إرسال تعليمات الدفع الرسمية لك،
-              ثم يتم تفعيل الاشتراك بعد التحقق من الدفع.
-            </div>
+              const pay = await fetch(`${API}/subscription/payment-info`, {
+                headers: { Authorization: `Bearer ${authToken}` }
+              });
+              const payData = await pay.json();
 
-            <button
-              className="primary"
-              style={{width: "100%", marginTop: "18px"}}
-              onClick={async () => {
-                try {
-                  const res = await fetch(`${API}/pro/interest`, {
-                    method: "POST",
-                    headers: {
-                      Authorization: `Bearer ${authToken}`
-                    }
-                  });
+              setSubscription(data);
+              setPaymentInfo(payData);
+            } catch (e) {
+              alert(e.message);
+            } finally {
+              setSubscriptionLoading(false);
+            }
+          }}
+        >
+          {subscriptionLoading ? "جاري إنشاء الطلب..." : "اشترك الآن — 1,000 دج / شهر"}
+        </button>
+      )}
 
-                  const data = await res.json();
+      {subscription?.status === "pending" && (
+        <div className="pro-payment-box">
+          <strong>💳 معلومات الدفع الرسمية</strong>
+          <p>المبلغ: <b>1,000 دج</b></p>
+          <p>طريقة الدفع: <b>{paymentInfo?.payment_method || "CCP"}</b></p>
+          {paymentInfo?.ccp && <p>المعرّف الرسمي: <b>{paymentInfo.ccp}</b></p>}
 
-                  if (!res.ok) {
-                    throw new Error(data.detail || "تعذر تسجيل طلب الاشتراك");
-                  }
+          <input
+            type="text"
+            value={paymentReference}
+            onChange={e => setPaymentReference(e.target.value)}
+            placeholder="أدخل رقم مرجع الدفع"
+          />
 
-                  setProInterested(true);
-                  addNotification("تم تسجيل طلب الاشتراك بنجاح ✅");
-                  setMessage("تم تسجيل طلب اشتراكك بنجاح ✅");
-                  setModal(null);
+          <button
+            className="primary-btn"
+            disabled={subscriptionLoading || paymentReference.trim().length < 3}
+            onClick={async () => {
+              setSubscriptionLoading(true);
+              try {
+                const res = await fetch(`${API}/subscription/paid`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`
+                  },
+                  body: JSON.stringify({ reference: paymentReference.trim() })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "تعذر إرسال الدفع");
 
-                } catch (err) {
-                  setError(err.message || "تعذر تسجيل طلب الاشتراك");
-                }
-              }}
-            >
-              {proInterested
-                ? "✓ تم تسجيل طلب الاشتراك"
-                : "اشترك الآن — 1,000 دج / شهر"}
-            </button>
-
-            <small className="pro-note">
-              الاشتراك شهري، والتفعيل يتم بعد التحقق من الدفع.
-            </small>
-          </div>
+                setSubscription(data);
+                alert("تم إرسال الدفع للمراجعة بنجاح ✅");
+              } catch (e) {
+                alert(e.message);
+              } finally {
+                setSubscriptionLoading(false);
+              }
+            }}
+          >
+            {subscriptionLoading ? "جاري الإرسال..." : "تأكيد الدفع"}
+          </button>
         </div>
       )}
+
+      {subscription?.status === "payment_review" && (
+        <div className="pro-status">
+          ⏳ تم إرسال الدفع للمراجعة.
+          <br />
+          سيتم تفعيل lbléd Pro بعد التحقق من الدفع.
+        </div>
+      )}
+
+      {subscription?.status === "active" && (
+        <div className="pro-status">
+          ✅ اشتراك lbléd Pro مفعّل.
+          <br />
+          صالح لمدة 30 يومًا.
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
       {modal === "cards" && (
         <div
