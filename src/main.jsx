@@ -17,6 +17,19 @@ function App() {
     () => sessionStorage.getItem("lbled_user_token") || ""
   );
   const authToken = ownerToken || userToken;
+
+  function logout() {
+    sessionStorage.removeItem("lbled_user_token");
+    sessionStorage.removeItem("lbled_owner_token");
+    setUserToken("");
+    setOwnerToken("");
+    setAccount(null);
+    setTransactions([]);
+    setCards([]);
+    setBeneficiaries([]);
+    setModal(null);
+    setMessage("تم تسجيل الخروج بنجاح");
+  }
   const [ownerKey, setOwnerKey] = React.useState("");
   const [ownerLoginLoading, setOwnerLoginLoading] = React.useState(false);
 const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
@@ -906,6 +919,14 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
         <div className="avatar">
           {userName.charAt(0)}
         </div>
+
+        <button
+          onClick={logout}
+          className="primary"
+          style={{ marginRight: "10px", padding: "8px 14px" }}
+        >
+          تسجيل الخروج
+        </button>
       </header>
 
       <main>
