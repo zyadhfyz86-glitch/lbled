@@ -1626,10 +1626,10 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
       <p>إدارة مالية احترافية لنشاطك التجاري.</p>
 
       <div className="pro-features">
-        <p>📊 تقارير مالية متقدمة</p>
-        <p>🧠 تحليل ذكي للربح والأداء</p>
-        <p>📅 تقارير شهرية ومقارنة الأداء</p>
-        <p>🔔 تنبيهات واقتراحات مالية ذكية</p>
+        <div>📊 <strong>تقارير مالية متقدمة</strong><small>تابع أرقام نشاطك بسهولة</small></div>
+        <div>🧠 <strong>تحليل ذكي للربح والأداء</strong><small>افهم أداء تجارتك واتخذ قرارات أفضل</small></div>
+        <div>📅 <strong>تقارير شهرية</strong><small>قارن أداء هذا الشهر بالشهر السابق</small></div>
+        <div>🔔 <strong>تنبيهات واقتراحات ذكية</strong><small>تنبيهات تساعدك على تحسين نشاطك</small></div>
       </div>
 
       <div className="pro-price">

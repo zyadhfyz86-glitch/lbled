@@ -623,3 +623,24 @@ main{
   color:#789687;
 }
 
+
+.pro-features div{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.pro-features div strong{
+  flex:1;
+  font-size:15px;
+  color:#f4df8a;
+}
+
+.pro-features div small{
+  width:100%;
+  padding-right:32px;
+  color:#91a795;
+  font-size:12px;
+  line-height:1.6;
+}
