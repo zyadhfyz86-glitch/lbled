@@ -302,6 +302,11 @@ const [showOwnerLogin, setShowOwnerLogin] = React.useState(false);
   }
 
   async function loadData() {
+    if (ownerToken) {
+      setLoading(false);
+      return;
+    }
+
     if (!authToken) {
       setLoading(false);
       return;
